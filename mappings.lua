@@ -20,8 +20,9 @@ M.dap = {
         sidebar.open();
       end,
       "Open debugging sidebar"
-    }
-  }
+    },
+    ["<leader>dr"] = { "<cmd> DapContinue <CR>" }
+  },
 }
 
 M.dap_go = {
