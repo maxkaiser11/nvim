@@ -46,3 +46,11 @@ lspconfig.terraformls.setup {
   cmd = {"terraform-ls", "serve"},
   root_dir = util.root_pattern(".terraform", ".git"),
 }
+
+lspconfig.clangd.setup {
+  on_attach = function (client, bufnr)
+    client.server_capabilities.signatureHelpProvider = false
+    on_attach(client, bufnr)
+  end,
+  capabilities = capabilities,
+}

@@ -28,7 +28,7 @@ local plugins = {
       ensure_installed = {
         "gopls",
         "rust-analyzer",
-        "python-lsp-server",
+        "clangd",
       },
     },
   },
