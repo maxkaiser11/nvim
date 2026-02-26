@@ -135,7 +135,8 @@ return {
                     { section = "startup" },
                     {
                         section = "terminal",
-                        cmd = "ascii-image-converter " .. os.getenv("USERPROFILE") .. "\\Pictures\\profile0.jpg -C -c -W 35",
+                        -- TODO: Find a good image that looks good in ascii
+                        cmd = "ascii-image-converter " .. os.getenv("USERPROFILE") .. "\\Pictures\\profile2.jpg -C -c -W 35",
                         random = 15,
                         pane = 2,
                         indent = 15,
@@ -172,7 +173,7 @@ return {
         event = { "BufReadPre", "BufNewFile" },
         optional = true,
         keys = {
-            { "<leader>pt", function() require("snacks").picker.todo_comments() end, desc = "TODO" },
+            { "<leader>pt", function() require("snacks").picker.todo_comments() end, desc = "All TODOS" },
             { "<leader>pT", function() require("snacks").picker.todo_comments({ keywords = { "TODO","FORGETNOT","FIXME" } }) end, desc = "mains" },
         },
     }

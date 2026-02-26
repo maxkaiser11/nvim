@@ -14,6 +14,7 @@ vim.opt.rtp:prepend(lazypath)
 require("lazy").setup(
     {
         { import = "max.plugins" },
+        { import = "max.plugins.lsp" }
     },
     {
         checker = {
