@@ -172,7 +172,7 @@ return {
         event = { "BufReadPre", "BufNewFile" },
         optional = true,
         keys = {
-            { "<leader>pt", function() require("snacks").picker.todo_comments() end, desc = "All" },
+            { "<leader>pt", function() require("snacks").picker.todo_comments() end, desc = "TODO" },
             { "<leader>pT", function() require("snacks").picker.todo_comments({ keywords = { "TODO","FORGETNOT","FIXME" } }) end, desc = "mains" },
         },
     }
