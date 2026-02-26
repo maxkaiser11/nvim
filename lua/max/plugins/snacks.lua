@@ -135,7 +135,7 @@ return {
                     { section = "startup" },
                     {
                         section = "terminal",
-                        -- cmd = "ascii-image-converter ~/Desktop/Others/profile.png -C -c",
+                        cmd = "ascii-image-converter " .. os.getenv("USERPROFILE") .. "\\Pictures\\profile0.jpg -C -c -W 35",
                         random = 15,
                         pane = 2,
                         indent = 15,
