@@ -37,6 +37,7 @@ return {
 				graphql = { "prettier" },
 				liquid = { "prettier" },
 				lua = { "stylua" },
+                go = {"gopls"},
 				-- python = { "black" },
 				markdown = { "mdformat", "markdown-toc" },
 				-- ["markdown.mdx"] = { "prettier", "markdownlint", "markdown-toc" },

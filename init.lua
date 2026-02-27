@@ -1,3 +1,3 @@
-require("Max.core")
-require("Max.lazy")
+require("max.core")
+require("max.lazy")
 require("current-theme")

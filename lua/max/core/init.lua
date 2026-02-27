@@ -1,2 +1,2 @@
-require("Max.core.options")
-require("Max.core.keymaps")
+require("max.core.options")
+require("max.core.keymaps")
