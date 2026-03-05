@@ -2,7 +2,8 @@ return {
     "neovim/nvim-lspconfig",
     event = { "BufReadPre", "BufNewFile" },
     dependencies = {
-        "hrsh7th/cmp-nvim-lsp", { "antosha417/nvim-lsp-file-operations", config = true },
+        "hrsh7th/cmp-nvim-lsp",
+        { "antosha417/nvim-lsp-file-operations", config = true },
     },
     config = function()
         -- NOTE: LSP Keybinds
@@ -87,7 +88,7 @@ return {
         local function has_floating_win()
             for _, winid in ipairs(vim.api.nvim_list_wins()) do
                 local cfg = vim.api.nvim_win_get_config(winid)
-                if cfg.relative ~= '' then
+                if cfg.relative ~= "" then
                     return true
                 end
             end
@@ -99,7 +100,7 @@ return {
             vim.diagnostic.config({
                 signs = { text = signs },
                 virtual_text = virtual_text_enabled,
-                underline = true,  -- Always on
+                underline = true, -- Always on
                 update_in_insert = true,
                 float = {
                     focusable = false,
@@ -115,13 +116,13 @@ return {
 
         -- LSP Toggle Keymaps
         -- <leader>lx toggle for virtual text (no hover changes)
-        vim.keymap.set('n', '<leader>lx', function()
+        vim.keymap.set("n", "<leader>lx", function()
             virtual_text_enabled = not virtual_text_enabled
             update_diagnostic_config()
         end, { desc = "Toggle LSP virtual text" })
 
         -- <leader>ll toggle between virtual text mode and precise hover mode
-        vim.keymap.set('n', '<leader>ll', function()
+        vim.keymap.set("n", "<leader>ll", function()
             virtual_text_enabled = not virtual_text_enabled
             update_diagnostic_config()
 
@@ -136,7 +137,13 @@ return {
                         if cursor_over_diagnostic() and not has_floating_win() then
                             vim.diagnostic.open_float(nil, {
                                 focusable = false,
-                                close_events = { "CursorMoved", "CursorMovedI", "BufHidden", "InsertCharPre", "WinLeave" },
+                                close_events = {
+                                    "CursorMoved",
+                                    "CursorMovedI",
+                                    "BufHidden",
+                                    "InsertCharPre",
+                                    "WinLeave",
+                                },
                             })
                         end
                     end,
@@ -149,7 +156,7 @@ return {
         local capabilities = cmp_nvim_lsp.default_capabilities()
 
         -- Global LSP settings (applied to all servers)
-        vim.lsp.config('*', {
+        vim.lsp.config("*", {
             capabilities = capabilities,
         })
 
@@ -174,6 +181,16 @@ return {
             },
         })
 
+        vim.lsp.config("vls", {
+            filetypes = { "vue" },
+            init_options = {
+                typescript = {
+                    tsdk =
+                    "C:/Users/User/AppData/Local/nvim-data/mason/packages/typescript-language-server/node_modules/typescript/lib",
+                },
+            },
+        })
+
         -- emmet_language_server
         vim.lsp.config("emmet_language_server", {
             filetypes = {
@@ -187,6 +204,9 @@ return {
                 "scss",
                 "pug",
                 "typescriptreact",
+                "svelte",
+                "vue_ls",
+                "volar",
             },
             init_options = {
                 includeLanguages = {},
@@ -212,6 +232,7 @@ return {
                 "scss",
                 "less",
                 "svelte",
+                "vue_ls",
             },
         })
 
@@ -222,6 +243,7 @@ return {
                 "javascriptreact",
                 "typescript",
                 "typescriptreact",
+                "vue",
             },
             single_file_support = true,
             init_options = {
@@ -247,12 +269,12 @@ return {
 
         -- css
         vim.lsp.config("cssls", {
-          filetypes = { "css", "scss", "less" },  -- Adjust as needed
-          settings = {
-            css = { validate = true },
-            scss = { validate = true },
-            less = { validate = true },
-          },
+            filetypes = { "css", "scss", "less" }, -- Adjust as needed
+            settings = {
+                css = { validate = true },
+                scss = { validate = true },
+                less = { validate = true },
+            },
         })
 
         -- tailwind
@@ -269,6 +291,9 @@ return {
                 "astro",
             },
             init_options = {
+                vue = {
+                    hybridMode = false,
+                },
                 userLanguages = {
                     astro = "html",
                 },
@@ -283,5 +308,7 @@ return {
         vim.lsp.enable("gopls")
         vim.lsp.enable("astro")
         vim.lsp.enable("tailwindcss")
+        vim.lsp.enable("svelte")
+        vim.lsp.enable("vue_ls")
     end,
 }
