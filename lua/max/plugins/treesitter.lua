@@ -1,60 +1,91 @@
 return {
-	"nvim-treesitter/nvim-treesitter",
-	event = { "BufReadPre", "BufNewFile" },
-	build = ":TSUpdate",
+	{
+		"nvim-treesitter/nvim-treesitter",
+		event = { "BufReadPre", "BufNewFile" },
+		build = ":TSUpdate",
+		config = function()
+			-- import nvim-treesitter plugin
+			local treesitter = require("nvim-treesitter")
 
-	main = "nvim-treesitter.configs",
-	opts = {
-		ensure_installed = {
-			"json",
-			"javascript",
-			"typescript",
-			"tsx",
-			"go",
-			"gomod",
-			"gosum",
-			"gowork",
-			"yaml",
-			"html",
-			"css",
-			"python",
-			"http",
-			"markdown",
-			"markdown_inline",
-			"graphql",
-			"bash",
-			"lua",
-			"vim",
-			"dockerfile",
-			"gitignore",
-			"query",
-			"vimdoc",
-			"c",
-			"java",
-			"rust",
-			"ron",
-			"prisma",
-			"svelte",
-			"vue",
-		},
+			-- configure treesitter
+			treesitter.setup({ -- enable syntax highlighting
+				highlight = {
+					enable = true,
+					additional_vim_regex_highlighting = false,
+				},
+				-- enable indentation
+				indent = { enable = true },
 
-		highlight = {
-			enable = true,
-			-- I’d set this to false unless you *need* regex highlight too
-			additional_vim_regex_highlighting = { "svelte", "vue" },
-		},
-
-		indent = { enable = true },
-
-		injections = { enable = true },
-
-		incremental_selection = {
-			enable = true,
-			keymaps = {
-				init_selection = "<C-space>",
-				node_incremental = "<C-space>",
-				node_decremental = "<C-backspace>",
-			},
-		},
+				-- ensure these languages parsers are installed
+				ensure_installed = {
+					"json",
+					"javascript",
+					"typescript",
+					"tsx",
+					"go",
+					"yaml",
+					"html",
+					"css",
+					"python",
+					"http",
+					"prisma",
+					"markdown",
+					"markdown_inline",
+					"svelte",
+					"graphql",
+					"bash",
+					"lua",
+					"vim",
+					"dockerfile",
+					"gitignore",
+					"query",
+					"vimdoc",
+					"c",
+					"java",
+					"rust",
+					"ron",
+				},
+				incremental_selection = {
+					enable = true,
+					keymaps = {
+						init_selection = "<C-space>",
+						node_incremental = "<C-space>",
+						-- scope_incremental = false,
+						node_decremental = "<C-backspace>",
+					},
+				},
+			})
+			-- force start treesitter for all filetypes
+			vim.api.nvim_create_autocmd("FileType", {
+				pattern = "*",
+				callback = function()
+					pcall(vim.treesitter.start)
+				end,
+			})
+		end,
+	},
+	-- NOTE: js,ts,jsx,tsx Auto Close Tags
+	{
+		"windwp/nvim-ts-autotag",
+		enabled = true,
+		ft = { "html", "xml", "javascript", "typescript", "javascriptreact", "typescriptreact", "svelte" },
+		config = function()
+			-- Independent nvim-ts-autotag setup
+			require("nvim-ts-autotag").setup({
+				opts = {
+					enable_close = true, -- Auto-close tags
+					enable_rename = true, -- Auto-rename pairs
+					enable_close_on_slash = false, -- Disable auto-close on trailing `</`
+				},
+				per_filetype = {
+					["html"] = {
+						enable_close = true, -- Disable auto-closing for HTML
+					},
+					["typescriptreact"] = {
+						enable_close = true, -- Explicitly enable auto-closing (optional, defaults to `true`)
+					},
+				},
+			})
+		end,
 	},
 }
