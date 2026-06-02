@@ -283,6 +283,25 @@ return {
 			})
 		end,
 	},
+	-- NOTE: OneDark Pro
+	{
+		"olimorris/onedarkpro.nvim",
+		priority = 1000,
+		lazy = false,
+		config = function()
+			require("onedarkpro").setup({
+				styles = {
+					comments = "italic",
+					keywords = "bold",
+				},
+				options = {
+					transparency = false,
+					terminal_colors = true,
+					cursorline = true,
+				},
+			})
+		end,
+	},
 	{
 		"catppuccin/nvim",
 		name = "catppuccin",

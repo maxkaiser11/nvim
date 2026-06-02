@@ -61,9 +61,9 @@ return {
 							border = "rounded",
 							title = "{title}",
 							title_pos = "center",
-							{ win = "input", height = 1, border = "bottom" },
-							{ win = "list", border = "none" },
-							{ win = "preview", title = "{preview}", width = 0.6, height = 0.4, border = "top" },
+							{ win = "input",   height = 1,          border = "bottom" },
+							{ win = "list",    border = "none" },
+							{ win = "preview", title = "{preview}", width = 0.6,      height = 0.4, border = "top" },
 						},
 					},
 					telescope = {
@@ -107,7 +107,7 @@ return {
 							{ win = "input", height = 1, border = "bottom" },
 							{
 								box = "horizontal",
-								{ win = "list", border = "none" },
+								{ win = "list",    border = "none" },
 								{ win = "preview", title = "{preview}", width = 0.5, border = "left" },
 							},
 						},
@@ -148,7 +148,7 @@ return {
 				enabled = true,
 				sections = {
 					{ section = "header" },
-					{ section = "keys", gap = 1, padding = 1 },
+					{ section = "keys",   gap = 1, padding = 1 },
 					{ section = "startup" },
 					{
 						section = "terminal",
