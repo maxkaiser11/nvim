@@ -8,6 +8,9 @@ local opts = { noremap = true, silent = true }
 map("n", ";", ":", { desc = "CMD enter command mode" })
 map("i", "jk", "<ESC>")
 
+-- toggle file explorer (NvChad maps <leader>e to focus-only; make it toggle)
+map("n", "<leader>e", "<cmd>NvimTreeToggle<CR>", { desc = "Toggle file explorer" })
+
 vim.g.maplocalleader = " "
 
 -- ---------------------------------------------------------------------------
@@ -16,7 +19,11 @@ vim.g.maplocalleader = " "
 
 -- re-source current file
 map("n", "<leader><leader>", function()
-  vim.cmd "so"
+  if vim.bo.filetype == "lua" then
+    vim.cmd "source %"
+  else
+    vim.notify("Not a Lua config file — nothing to source", vim.log.levels.WARN)
+  end
 end, { desc = "Source current file" })
 
 -- move selected lines up/down
