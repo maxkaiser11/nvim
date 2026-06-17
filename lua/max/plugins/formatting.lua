@@ -31,6 +31,7 @@ return {
 				typescriptreact = { "biome-check" },
 				css = { "biome-check" },
 				html = { "prettier" },
+				gohtmltmpl = { "djlint" },
 				svelte = { "prettier" },
 				json = { "biome-check" },
 				yaml = { "prettier" },
@@ -62,6 +63,10 @@ return {
 		}
 		conform.formatters.shfmt = {
 			prepend_args = { "-i", "4" },
+		}
+		-- Format Go HTML templates with djlint's golang profile
+		conform.formatters.djlint = {
+			prepend_args = { "--profile", "golang", "--indent", "4" },
 		}
 
 		vim.keymap.set({ "n", "v" }, "<leader>mp", function()

@@ -40,3 +40,11 @@ vim.opt.hlsearch = true
 
 vim.opt.mouse = "a"
 vim.g.editorconfig = true
+
+-- Treat Go HTML template files (.tmpl) as gohtmltmpl so the html-family
+-- LSP servers and the gotmpl treesitter parser attach to them.
+vim.filetype.add({
+    extension = {
+        tmpl = "gohtmltmpl",
+    },
+})
