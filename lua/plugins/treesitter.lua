@@ -29,7 +29,11 @@ return {
       "java",
       "rust",
       "ron",
+      "gotmpl",
     })
+
+    -- map the gohtmltmpl filetype (.tmpl) to the gotmpl parser
+    vim.treesitter.language.register("gotmpl", "gohtmltmpl")
 
     opts.incremental_selection = {
       enable = true,

@@ -156,11 +156,17 @@ vim.lsp.config("lua_ls", {
   },
 })
 
+-- html (vscode-html-language-server) — also attach to Go HTML templates
+vim.lsp.config("html", {
+  filetypes = { "html", "templ", "gohtmltmpl" },
+})
+
 vim.lsp.config("emmet_language_server", {
   filetypes = {
     "css",
     "eruby",
     "html",
+    "gohtmltmpl",
     "javascript",
     "javascriptreact",
     "less",
@@ -177,6 +183,7 @@ vim.lsp.config("emmet_language_server", {
 vim.lsp.config("emmet_ls", {
   filetypes = {
     "html",
+    "gohtmltmpl",
     "typescriptreact",
     "javascriptreact",
     "css",
@@ -229,6 +236,7 @@ vim.lsp.config("cssls", {
 vim.lsp.config("tailwindcss", {
   filetypes = {
     "html",
+    "gohtmltmpl",
     "css",
     "javascript",
     "typescript",
