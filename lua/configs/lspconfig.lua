@@ -253,8 +253,28 @@ vim.lsp.config("tailwindcss", {
   },
 })
 
+-- clangd (C / C++ / Objective-C)
+vim.lsp.config("clangd", {
+  cmd = {
+    "clangd",
+    "--background-index",
+    "--clang-tidy",
+    "--header-insertion=iwyu",
+    "--completion-style=detailed",
+    "--function-arg-placeholders",
+    "--fallback-style=llvm",
+  },
+  filetypes = { "c", "cpp", "objc", "objcpp", "cuda" },
+  init_options = {
+    usePlaceholders = true,
+    completeUnimported = true,
+    clangdFileStatus = true,
+  },
+})
+
 -- Enable the servers
 vim.lsp.enable {
+  "clangd",
   "html",
   "cssls",
   "lua_ls",
