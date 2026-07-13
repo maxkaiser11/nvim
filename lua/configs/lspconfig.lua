@@ -263,6 +263,10 @@ vim.lsp.config("clangd", {
     "--completion-style=detailed",
     "--function-arg-placeholders",
     "--fallback-style=llvm",
+    -- Let clangd query MinGW's g++ for its system/libstdc++ include paths.
+    -- Without this clangd can't find <iostream> etc. and reports
+    -- "use of undeclared identifier 'std'".
+    "--query-driver=C:/mingw64/bin/*",
   },
   filetypes = { "c", "cpp", "objc", "objcpp", "cuda" },
   init_options = {
