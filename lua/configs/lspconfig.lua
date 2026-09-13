@@ -156,11 +156,17 @@ vim.lsp.config("lua_ls", {
   },
 })
 
+-- html (vscode-html-language-server) — also attach to Go HTML templates
+vim.lsp.config("html", {
+  filetypes = { "html", "templ", "gohtmltmpl" },
+})
+
 vim.lsp.config("emmet_language_server", {
   filetypes = {
     "css",
     "eruby",
     "html",
+    "gohtmltmpl",
     "javascript",
     "javascriptreact",
     "less",
@@ -177,6 +183,7 @@ vim.lsp.config("emmet_language_server", {
 vim.lsp.config("emmet_ls", {
   filetypes = {
     "html",
+    "gohtmltmpl",
     "typescriptreact",
     "javascriptreact",
     "css",
@@ -238,6 +245,7 @@ vim.lsp.config("cssls", {
 vim.lsp.config("tailwindcss", {
   filetypes = {
     "html",
+    "gohtmltmpl",
     "css",
     "javascript",
     "typescript",
@@ -254,8 +262,32 @@ vim.lsp.config("tailwindcss", {
   },
 })
 
+-- clangd (C / C++ / Objective-C)
+vim.lsp.config("clangd", {
+  cmd = {
+    "clangd",
+    "--background-index",
+    "--clang-tidy",
+    "--header-insertion=iwyu",
+    "--completion-style=detailed",
+    "--function-arg-placeholders",
+    "--fallback-style=llvm",
+    -- Let clangd query MinGW's g++ for its system/libstdc++ include paths.
+    -- Without this clangd can't find <iostream> etc. and reports
+    -- "use of undeclared identifier 'std'".
+    "--query-driver=C:/mingw64/bin/*",
+  },
+  filetypes = { "c", "cpp", "objc", "objcpp", "cuda" },
+  init_options = {
+    usePlaceholders = true,
+    completeUnimported = true,
+    clangdFileStatus = true,
+  },
+})
+
 -- Enable the servers
 vim.lsp.enable {
+  "clangd",
   "html",
   "go_template_lsp",
   "cssls",

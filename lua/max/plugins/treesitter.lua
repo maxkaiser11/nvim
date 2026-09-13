@@ -44,6 +44,7 @@ return {
 					"java",
 					"rust",
 					"ron",
+					"gotmpl",
 				},
 				incremental_selection = {
 					enable = true,
@@ -55,6 +56,9 @@ return {
 					},
 				},
 			})
+			-- map the gohtmltmpl filetype (.tmpl) to the gotmpl parser
+			vim.treesitter.language.register("gotmpl", "gohtmltmpl")
+
 			-- force start treesitter for all filetypes
 			vim.api.nvim_create_autocmd("FileType", {
 				pattern = "*",

@@ -59,6 +59,7 @@ return {
 				"stylua", -- lua formatter
 				"isort", -- python formatter
 				"pylint",
+				"djlint", -- go/django/jinja template formatter + linter
 				"clangd",
 				"denols",
 				-- { 'eslint_d', version = '13.1.2' },

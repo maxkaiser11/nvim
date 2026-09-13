@@ -39,3 +39,11 @@ vim.opt.clipboard:append "unnamedplus"
 vim.opt.mouse = "a"
 vim.g.editorconfig = true
 vim.g.netrw_banner = 0
+
+-- Treat Go HTML template files (.tmpl) as gohtmltmpl so the html-family LSP
+-- servers and the gotmpl treesitter parser attach to them.
+vim.filetype.add {
+  extension = {
+    tmpl = "gohtmltmpl",
+  },
+}
