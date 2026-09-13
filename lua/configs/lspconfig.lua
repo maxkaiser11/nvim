@@ -217,6 +217,15 @@ vim.lsp.config("gopls", {
   },
 })
 
+-- go-template-lsp: https://github.com/yayolande/go-template-lsp
+-- Not shipped with nvim-lspconfig, so the whole config is defined here.
+-- Only attaches inside a Go module (needs a go.mod above the file).
+vim.lsp.config("go_template_lsp", {
+  cmd = { "go-template-lsp" },
+  filetypes = { "html", "gotmpl" },
+  root_markers = { "go.mod" },
+})
+
 vim.lsp.config("cssls", {
   filetypes = { "css", "scss", "less" },
   settings = {
@@ -248,6 +257,7 @@ vim.lsp.config("tailwindcss", {
 -- Enable the servers
 vim.lsp.enable {
   "html",
+  "go_template_lsp",
   "cssls",
   "lua_ls",
   "ts_ls",
