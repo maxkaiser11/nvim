@@ -17,7 +17,12 @@ return {
           "html",
           "cssls",
           "tailwindcss",
+          -- NOTE: Mason's gopls is v0.23.0, which cannot analyse packages that
+          -- import net/http under Go 1.27 (see configs/lspconfig.lua). It is
+          -- kept here only as a fallback -- the config prefers $GOBIN/gopls.
           "gopls",
+          "templ", -- a-h/templ: LSP + formatter, one binary
+          "htmx", -- hx-* attribute completion
           "angularls",
           "astro",
           "emmet_ls",
@@ -42,10 +47,19 @@ return {
           "pylint",
           "clangd",
           "biome",
-          "gofumpt",
           "mdformat",
           "markdown-toc",
           "markdownlint-cli2",
+
+          -- Go toolchain
+          "gofumpt", -- formatter (strict gofmt superset)
+          "goimports", -- import management
+          "golines", -- optional long-line wrapper
+          "golangci-lint", -- aggregate linter, wired up in nvim-lint.lua
+          "delve", -- debugger, wired up in go.lua
+          "gomodifytags", -- struct tag add/remove (gopher.nvim)
+          "impl", -- interface stub generation (gopher.nvim)
+          "gotests", -- table-test generation (gopher.nvim)
         },
       }
     end,

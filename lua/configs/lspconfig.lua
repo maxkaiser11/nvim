@@ -43,6 +43,26 @@ vim.api.nvim_create_autocmd("LspAttach", {
     vim.keymap.set("n", "<leader>rs", "<cmd>LspRestart<CR>", opts)
 
     vim.keymap.set("i", "<C-h>", vim.lsp.buf.signature_help, opts)
+
+    local client = vim.lsp.get_client_by_id(ev.data.client_id)
+
+    -- Inlay hints (param names / inferred types). Off by default, <leader>gh
+    -- toggles them for the current buffer.
+    if client and client:supports_method "textDocument/inlayHint" then
+      opts.desc = "Toggle inlay hints"
+      vim.keymap.set("n", "<leader>gh", function()
+        vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = ev.buf }, { bufnr = ev.buf })
+      end, opts)
+    end
+
+    -- gopls code lenses: run test / generate / tidy / upgrade dependency.
+    -- On 0.12 `codelens.enable` owns the refresh cycle; `codelens.refresh` is
+    -- deprecated and a hand-rolled BufEnter/InsertLeave autocmd is redundant.
+    if client and client:supports_method "textDocument/codeLens" then
+      opts.desc = "Run code lens"
+      vim.keymap.set("n", "<leader>gl", vim.lsp.codelens.run, opts)
+      vim.lsp.codelens.enable(true, { bufnr = ev.buf })
+    end
   end,
 })
 
@@ -156,17 +176,36 @@ vim.lsp.config("lua_ls", {
   },
 })
 
--- html (vscode-html-language-server) — also attach to Go HTML templates
+-- html (vscode-html-language-server) — also attach to Go HTML templates.
+-- It can't parse {{ }} actions, so its diagnostics are dropped on template
+-- buffers (go_template_lsp / templ own correctness there); completion, hover
+-- and folding still work.
 vim.lsp.config("html", {
   filetypes = { "html", "templ", "gohtmltmpl" },
+  -- default is { "package.json", ".git" } -- a Go module has neither in a
+  -- views/ subdirectory, and then the server silently never starts
+  root_markers = { "package.json", "go.work", "go.mod", ".git" },
+  handlers = {
+    ["textDocument/publishDiagnostics"] = function(err, result, ctx)
+      local ft = vim.bo[vim.uri_to_bufnr(result.uri)].filetype
+      if ft == "gohtmltmpl" or ft == "templ" then
+        return
+      end
+      return vim.lsp.handlers["textDocument/publishDiagnostics"](err, result, ctx)
+    end,
+  },
 })
 
+-- emmet: only emmet_language_server is enabled. Running emmet_ls alongside it
+-- produces duplicate completion entries for every abbreviation.
 vim.lsp.config("emmet_language_server", {
+  root_markers = { "go.work", "go.mod", "package.json", ".git" },
   filetypes = {
     "css",
     "eruby",
     "html",
     "gohtmltmpl",
+    "templ",
     "javascript",
     "javascriptreact",
     "less",
@@ -177,21 +216,6 @@ vim.lsp.config("emmet_language_server", {
     "svelte",
     "vue",
     "ejs",
-  },
-})
-
-vim.lsp.config("emmet_ls", {
-  filetypes = {
-    "html",
-    "gohtmltmpl",
-    "typescriptreact",
-    "javascriptreact",
-    "css",
-    "sass",
-    "scss",
-    "less",
-    "svelte",
-    "vue",
   },
 })
 
@@ -212,26 +236,178 @@ vim.lsp.config("ts_ls", {
   },
 })
 
+-- ---------------------------------------------------------------------------
+-- Go
+-- ---------------------------------------------------------------------------
+
+-- gopls reports template parse errors one line PAST the end of the buffer
+-- ("unexpected EOF" at line N for an N-line file). vim.diagnostic then calls
+-- nvim_buf_get_lines on that line and raises "Index out of bounds", which
+-- aborts whatever triggered the publish. An unterminated {{ if }} is the normal
+-- state of a template you are halfway through typing, so this fires constantly.
+-- Clamp every range into the buffer before handing it on.
+-- gopls publishes diagnostics for files across the whole module, most of which
+-- have no buffer yet -- and those are exactly the ones that blow up later, when
+-- the file is finally opened and the stored range is rendered. So fall back to
+-- counting lines on disk. Only template URIs pay for that read; .go files (the
+-- overwhelming majority, and never the source of this bug) are skipped.
+local function line_count(uri, buf)
+  if vim.api.nvim_buf_is_loaded(buf) then
+    return vim.api.nvim_buf_line_count(buf)
+  end
+  local fname = vim.uri_to_fname(uri)
+  if fname:match "%.go$" or vim.fn.filereadable(fname) ~= 1 then
+    return nil
+  end
+  return #vim.fn.readfile(fname)
+end
+
+local function last_line_text(uri, buf, lnum)
+  if vim.api.nvim_buf_is_loaded(buf) then
+    return vim.api.nvim_buf_get_lines(buf, lnum, lnum + 1, false)[1] or ""
+  end
+  return vim.fn.readfile(vim.uri_to_fname(uri), "", lnum + 1)[lnum + 1] or ""
+end
+
+local function clamp_diagnostics(err, result, ctx)
+  local buf = vim.uri_to_bufnr(result.uri)
+  local count = line_count(result.uri, buf)
+  if count then
+    local last = math.max(count - 1, 0)
+    for _, d in ipairs(result.diagnostics or {}) do
+      for _, pos in ipairs { d.range.start, d.range["end"] } do
+        if pos.line > last then
+          pos.line = last
+          pos.character = #last_line_text(result.uri, buf, last)
+        end
+      end
+      local r = d.range
+      if r.start.line == r["end"].line and r.start.character > r["end"].character then
+        r.start.character = r["end"].character
+      end
+    end
+  end
+  return vim.lsp.handlers["textDocument/publishDiagnostics"](err, result, ctx)
+end
+
+-- Which gopls binary to run.
+--
+-- The tagged release (v0.23.0, what Mason installs) is built against an older
+-- x/tools than the Go 1.27 toolchain here. The moment a package imports
+-- net/http, gopls fails to read the stdlib export data and silently publishes
+-- ZERO analysis diagnostics -- no printf, no nilness, no unusedparams, only
+-- hard compiler errors. `gopls check` on the same file still reports them, so
+-- the failure is invisible unless you go looking. Since every htmx/web project
+-- imports net/http, that is the whole point of this config.
+--
+-- A gopls built from master handles Go 1.27 fine, so prefer the one in GOBIN
+-- and fall back to whatever is on PATH. Rebuild with:
+--     git clone --depth 1 https://go.googlesource.com/tools
+--     cd tools/gopls && go install .
+-- Drop this once a release past v0.23.0 is out (`go install ...gopls@latest`
+-- will then be enough) and Mason has picked it up.
+local function gopls_cmd()
+  local gobin = vim.env.GOBIN
+  if not gobin or gobin == "" then
+    gobin = vim.fs.joinpath(vim.env.GOPATH or vim.fs.joinpath(vim.uv.os_homedir(), "go"), "bin")
+  end
+  local exe = vim.fs.joinpath(gobin, "gopls" .. (vim.fn.has "win32" == 1 and ".exe" or ""))
+  return vim.fn.executable(exe) == 1 and { exe } or { "gopls" }
+end
+
 vim.lsp.config("gopls", {
+  handlers = {
+    ["textDocument/publishDiagnostics"] = clamp_diagnostics,
+  },
+  cmd = gopls_cmd(),
+  -- `gohtmltmpl` is not in nvim-lspconfig's default list, but gopls only sees a
+  -- template if nvim actually sends didOpen for it -- without this the
+  -- `templateExtensions` setting below is dead config.
+  filetypes = { "go", "gomod", "gowork", "gotmpl", "gohtmltmpl" },
   settings = {
     gopls = {
+      -- Parse Go templates: gives real {{ }} syntax diagnostics, document
+      -- symbols for the fields and {{ define }} blocks, and go-to-definition
+      -- between {{ template "x" }} and its definition. gopls does NOT infer
+      -- which struct a template is executed with, so it cannot complete
+      -- {{ .Field }} -- htmx/tailwind/emmet handle the markup half.
+      -- "html" is deliberately absent: .html keeps the `html` filetype and is
+      -- never sent to gopls, and listing it here only makes gopls report
+      -- template errors for ordinary HTML elsewhere in the module.
+      templateExtensions = { "tmpl", "gotmpl", "gohtml" },
+
+      gofumpt = true,
+      staticcheck = true,
+      semanticTokens = true,
+      usePlaceholders = true,
+      completeUnimported = true,
+      -- rank stdlib/most-used completions higher instead of alphabetically
+      matcher = "Fuzzy",
+      experimentalPostfixCompletions = true,
+      symbolMatcher = "FastFuzzy",
+      -- don't index vendored deps / build output as workspace symbols
+      directoryFilters = { "-.git", "-.vscode", "-.idea", "-node_modules", "-vendor", "-tmp", "-bin" },
+
       analyses = {
         unusedparams = true,
+        unusedwrite = true,
+        unusedvariable = true,
+        useany = true,
+        nilness = true,
+        shadow = false, -- too noisy with idiomatic `err :=` shadowing
+        fieldalignment = false, -- opinionated; enable per-project if you care
       },
-      staticcheck = true,
-      gofumpt = true,
+
+      -- Inline hints: parameter names, inferred types, composite-literal keys.
+      -- Toggle them at runtime with <leader>gh.
+      hints = {
+        assignVariableTypes = true,
+        compositeLiteralFields = true,
+        compositeLiteralTypes = true,
+        constantValues = true,
+        functionTypeParameters = true,
+        parameterNames = true,
+        rangeVariableTypes = true,
+      },
+
+      codelenses = {
+        gc_details = false,
+        generate = true,
+        regenerate_cgo = true,
+        run_govulncheck = true,
+        test = true,
+        tidy = true,
+        upgrade_dependency = true,
+        vendor = true,
+      },
     },
   },
 })
 
--- go-template-lsp: https://github.com/yayolande/go-template-lsp
--- Not shipped with nvim-lspconfig, so the whole config is defined here.
--- Only attaches inside a Go module (needs a go.mod above the file).
-vim.lsp.config("go_template_lsp", {
-  cmd = { "go-template-lsp" },
-  filetypes = { "html", "gotmpl" },
-  root_markers = { "go.mod" },
+-- a-h/templ (.templ) -- installed via mason as the `templ` package.
+vim.lsp.config("templ", {
+  filetypes = { "templ" },
 })
+
+-- htmx-lsp: completion + docs for hx-* attributes.
+vim.lsp.config("htmx", {
+  filetypes = { "html", "templ", "gohtmltmpl" },
+  root_markers = { "go.work", "go.mod", "package.json", ".git" },
+})
+
+-- go-template-lsp (https://github.com/yayolande/go-template-lsp) is NOT enabled.
+-- v0.4.1 returns an initialize result that Neovim 0.12's stricter LSP client
+-- rejects outright ("INVALID_SERVER_MESSAGE"), so the server dies on attach.
+-- gopls covers the same ground better anyway: with `templateExtensions` set
+-- above it resolves {{ .Field }} against the struct actually passed to
+-- Execute, which go-template-lsp never did. Re-enable it here if upstream
+-- fixes the handshake.
+--
+-- vim.lsp.config("go_template_lsp", {
+--   cmd = { "go-template-lsp" },
+--   filetypes = { "gohtmltmpl", "gotmpl" },
+--   root_markers = { "go.mod" },
+-- })
 
 vim.lsp.config("cssls", {
   filetypes = { "css", "scss", "less" },
@@ -246,6 +422,8 @@ vim.lsp.config("tailwindcss", {
   filetypes = {
     "html",
     "gohtmltmpl",
+    "gotmpl",
+    "templ",
     "css",
     "javascript",
     "typescript",
@@ -258,6 +436,26 @@ vim.lsp.config("tailwindcss", {
   init_options = {
     userLanguages = {
       astro = "html",
+      templ = "html",
+      gohtmltmpl = "html",
+    },
+  },
+  settings = {
+    tailwindCSS = {
+      includeLanguages = {
+        templ = "html",
+        gohtmltmpl = "html",
+        gotmpl = "html",
+      },
+      -- pick up `class=` inside {{ if }} blocks and Go string literals that
+      -- hold class lists (e.g. `var btn = "px-4 py-2 ..."`)
+      experimental = {
+        classRegex = {
+          [[class[:=]\s*"([^"]*)"]],
+          [[Class[:=]\s*"([^"]*)"]],
+          [[\bclass(?:es)?\s*[:=]\s*`([^`]*)`]],
+        },
+      },
     },
   },
 })
@@ -289,14 +487,14 @@ vim.lsp.config("clangd", {
 vim.lsp.enable {
   "clangd",
   "html",
-  "go_template_lsp",
+  "templ",
+  "htmx",
   "cssls",
   "lua_ls",
   "ts_ls",
   "gopls",
   "tailwindcss",
   "emmet_language_server",
-  "emmet_ls",
   "astro",
   "svelte",
   "marksman",

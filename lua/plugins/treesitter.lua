@@ -32,11 +32,25 @@ return {
       "java",
       "rust",
       "ron",
+      -- Go
+      "go",
+      "gomod",
+      "gosum",
+      "gowork",
       "gotmpl",
+      "templ",
     })
 
-    -- map the gohtmltmpl filetype (.tmpl) to the gotmpl parser
+    -- The .tmpl/.gohtml filetypes use the `gotmpl` parser; queries/gotmpl/
+    -- injections.scm then injects `html` into the text regions between actions.
     vim.treesitter.language.register("gotmpl", "gohtmltmpl")
+
+    -- Indentation for Go templates: the gotmpl parser has no indent queries, so
+    -- treesitter indent would flatten everything. Keep it off for those.
+    opts.indent = vim.tbl_deep_extend("force", opts.indent or {}, {
+      enable = true,
+      disable = { "gohtmltmpl", "gotmpl" },
+    })
 
     opts.incremental_selection = {
       enable = true,

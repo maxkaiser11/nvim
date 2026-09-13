@@ -40,10 +40,23 @@ vim.opt.mouse = "a"
 vim.g.editorconfig = true
 vim.g.netrw_banner = 0
 
--- Treat Go HTML template files (.tmpl) as gohtmltmpl so the html-family LSP
--- servers and the gotmpl treesitter parser attach to them.
+-- Treat Go HTML template files as gohtmltmpl so the html-family LSP servers and
+-- the gotmpl treesitter parser attach to them. (.templ is a-h/templ and is
+-- detected by Neovim itself -- don't map it here.)
 vim.filetype.add {
   extension = {
     tmpl = "gohtmltmpl",
+    gohtml = "gohtmltmpl",
+    gotmpl = "gotmpl",
+  },
+  filename = {
+    [".golangci.yml"] = "yaml",
+    [".golangci.yaml"] = "yaml",
+  },
+  pattern = {
+    -- non-HTML Go templates (config files, SQL, k8s manifests, ...)
+    [".*%.go%.tmpl"] = "gotmpl",
+    [".*%.sql%.tmpl"] = "gotmpl",
+    [".*%.ya?ml%.tmpl"] = "gotmpl",
   },
 }
